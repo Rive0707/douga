@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <!-- iPhoneのPWA対応 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="字幕学習アプリ" />
+
+    <!-- ホーム画面に追加時のアイコン -->
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icon-167.png" />
+
+    <!-- スプラッシュスクリーン -->
+    <link rel="apple-touch-startup-image" href="splash.png" />
+
+    <!-- PWA対応 -->
+    <link rel="manifest" href="manifest.json" />
+
+    <title>字幕学習アプリ</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="video-section">
+        <label for="videoFile" id="videoFileLabel"
+          >動画ファイルを選んでください:</label
+        >
+        <input type="file" id="videoFile" accept="video/*,.mkv" />
+
+        <label for="subtitleFile" id="subtitleFileLabel"
+          >字幕ファイルを選んでください:</label
+        >
+        <input type="file" id="subtitleFile" accept=".srt,.vtt" />
+
+        <div class="playback-controls">
+          <label for="playbackMode">再生モード:</label>
+          <select id="playbackMode">
+            <option value="manual">手動再生</option>
+            <option value="auto">自動再生</option>
+          </select>
+        </div>
+
+        <video id="videoPlayer" controls>
+          <source id="videoSource" type="" />
+          お使いのブラウザは動画再生に対応していません。
+        </video>
+      </div>
+
+      <div class="right-side">
+        <!-- 字幕リスト -->
+        <div class="subtitle-list-section">
+          <h3>字幕リスト</h3>
+          <ul id="subtitleList"></ul>
+        </div>
+
+        <!-- 現在再生中の字幕 -->
+        <div id="currentSubtitle">
+          <p id="currentSubtitleText"></p>
+          <div class="learning-buttons">
+            <button id="learnedButton">学習済み</button>
+            <button id="learningButton">学習中</button>
+            <button id="unlearnedButton">未学習</button>
+          </div>
+        </div>
+
+        <!-- 和訳機能 -->
+        <div class="translation-section">
+          <textarea
+            id="inputText"
+            rows="2"
+            cols="30"
+            placeholder="翻訳したい英語を入力してください"
+          ></textarea>
+          <br />
+          <button id="translateButton">翻訳</button>
+          <p id="outputText"></p>
+        </div>
+      </div>
+    </div>
+    <script>
+      const apiKey = "46d5fa2c-100f-46b7-9cb3-654a744b3e71:fx"; // ここにDeepLのAPIキーを入力
+
+      document
+        .getElementById("translateButton")
+        .addEventListener("click", async function () {
+          const inputText = document.getElementById("inputText").value;
+          const outputText = document.getElementById("outputText");
+
+          const apiUrl = `https://api-free.deepl.com/v2/translate?auth_key=${apiKey}&text=${encodeURIComponent(
+            inputText
+          )}&target_lang=JA`;
+
+          try {
+            const response = await fetch(apiUrl);
+            const result = await response.json();
+            if (response.ok) {
+              outputText.textContent = result.translations[0].text;
+            } else {
+              throw new Error("翻訳エラー");
+            }
+          } catch (error) {
+            console.error("翻訳エラー:", error);
+            outputText.textContent =
+              "翻訳に失敗しました。もう一度試してください。";
+          }
+        });
+    </script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const videoPlayer = document.getElementById("videoPlayer");
+        videoPlayer.playsInline = true;
+        videoPlayer.controls = true;
+
+        // iOSでの自動再生対策
+        videoPlayer.addEventListener("canplaythrough", function () {
+          const playPromise = videoPlayer.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(function (error) {
+              console.log("Autoplay prevented");
+            });
+          }
+        });
+      });
+    </script>
+
+    <!-- Service Worker登録 -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then(function (registration) {
+            console.log("ServiceWorker registration successful");
+          })
+          .catch(function (error) {
+            console.log("ServiceWorker registration failed:", error);
+          });
+      }
+    </script>
+    <script type="module" src="app1.js"></script>
+    <link rel="stylesheet" href="style1.css" />
+  </body>
+</html>
